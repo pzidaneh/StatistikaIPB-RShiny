@@ -9,7 +9,8 @@ Contributors:
 5. Faridatun Nisa
 6. etc.
 
-Supervisor:
+
+Supervisors:
 1. Bagus Sartono
 2. Aep Hidayatuloh
 3. Dewi
