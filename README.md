@@ -8,3 +8,8 @@ Contributors:
 4. M. Rizky Nurhambali
 5. Faridatun Nisa
 6. etc.
+
+Supervisor:
+1. Bagus Sartono
+2. Aep Hidayatuloh
+3. Dewi
