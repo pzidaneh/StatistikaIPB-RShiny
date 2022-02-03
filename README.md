@@ -1,5 +1,5 @@
 # StatistikaIPB-RShiny
-## Compilations of Statistics IPB R Shiny programs
+Compilations of Statistics IPB's R Shiny programs
 
 ### Contributors
 1. Tony Alfan
