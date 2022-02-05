@@ -7,3 +7,5 @@
 6. Radja  : https://radjafikri16.shinyapps.io/tugas1/
 7. Adel   : https://adeliaa.shinyapps.io/tugas1/
 8. Rizky  : https://rizkynurhambali.shinyapps.io/rshiny/
+9. Alfi   : https://alfidhia.shinyapps.io/shiny/
+10. Nicky : https://nickytas11.shinyapps.io/shinyapp/
