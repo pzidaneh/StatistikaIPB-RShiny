@@ -16,4 +16,4 @@ Compilations of Statistics IPB's R Shiny programs
 ### Supervisors
 1. Bagus Sartono
 2. Aep Hidayatuloh
-3. Dewi
+3. Dewi Kiswani B.
