@@ -1,5 +1,3 @@
-if (interactive()) {
-
 library(shiny)
 
 ui <- fluidPage(
@@ -48,7 +46,7 @@ server <- function(input, output, session) {
   updateSelectInput(session=session, 
                     inputId="variable", 
                     label="Select variable: ",
-                    choices = colnames(readTxtFile()))
+                    choices = colnames(readTxtFile()[,-1]))
   })
   
   output$head <- renderTable({
@@ -65,7 +63,8 @@ server <- function(input, output, session) {
     
     data      <- readTxtFile()
     column    <- input$variable
-    hist(x=as.numeric(data[,column]), col="gold", border="black", breaks=10,
+    x         <- as.numeric(data[,column])
+    hist(x=x, col="gold", border="black",
          main=paste("Histogram of",input$variable),
          xlab=input$variable)
   })
@@ -74,15 +73,13 @@ server <- function(input, output, session) {
     if (is.null(input$txtFile))
       return(NULL)
     
-    data <- readTxtFile()
-    column <- input$variable
-    boxplot(x=as.numeric(data[,column]), 
+    data    <- readTxtFile()
+    column  <- input$variable
+    x       <- as.numeric(data[,column])
+    boxplot(x=x, 
             main=paste("Boxplot of",input$variable),
             xlab=input$variable)
   })
 }
 
 shinyApp(ui = ui, server = server)
-
-}
-
