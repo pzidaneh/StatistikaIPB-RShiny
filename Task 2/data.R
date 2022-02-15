@@ -1,0 +1,5 @@
+timestamp <- read.csv("https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data-last-updated-timestamp.txt")
+df <- read.csv("https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv")
+uniqueLoc <- unique(df[c('location', 'continent')])
+minDate <- min(as.Date(unique(df$date)))
+maxDate <- max(as.Date(unique(df$date)))
