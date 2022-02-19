@@ -66,7 +66,7 @@ ui <- dashboardPage(skin = "green",
                   
                   tabPanel(
                     "Plots",
-                    plotOutput("corr"),
+                    plotOutput(outputId = "corr"),
                     plotOutput(outputId = "resid")),
                  
                    tabPanel(
@@ -139,14 +139,13 @@ server <- function(input, output, session){
   })
   
   korelasi <- reactive({
-    round(cor(dtNumerik()))
+    cor(dtNumerik())
   })
   
   output$corr <-
     renderPlot(corrplot::corrplot(
       korelasi(),
       type = "lower",
-      order = "hclust",
       method = "number"
     ))
   
