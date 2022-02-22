@@ -35,8 +35,8 @@ ui <- dashboardPage(skin = "green",
                                             "Comma (,)" =",",
                                             "Tab" = "\t",
                                             "Pipe (|)" = "|",
-                                            "Spasi" = " ",
-                                            "NULL" = "NULL"),
+                                            "Spasi" = " "
+                                            ),
                                 selected = ";")),
                 
                 box(title = "Variabel Y", status = "primary", solidHeader = T,
@@ -78,15 +78,37 @@ ui <- dashboardPage(skin = "green",
                     "Uji Asumsi",
                     
                     box(title = "Uji Asumsi Normalitas",
+                    selectInput(inputId = "sel.norm",
+                                label = "Pilih Jenis Uji",
+                                choices = c("Shapiro-Wilk"="shapiro",
+                                            "Kolmogorov-Smirnov"= "ks",
+                                            "Anderson-Darling" = "anderson",
+                                            "Chi-Square" = "chisq",
+                                            "Lilliefors" = "lili"),
+                                selected = "shapiro"),
                     verbatimTextOutput(outputId = "norm")),
                     
                     box(title = "Uji Asumsi Heteroskedastisitas",
+                    selectInput(inputId = "sel.hetero",
+                                label = "Pilih Jenis Uji",
+                                choices = c("Breusch-Pagan" = "bp",
+                                            "Glejser" = "glesjer",
+                                            "Bartlett" = "bart",
+                                            "Park"= "park",
+                                            "White"= "white"),
+                                selected = "bp"),
                     verbatimTextOutput(outputId = "hetero")),
                     
                     box(title = "Uji Asumsi Autokorelasi",
+                    selectInput(inputId = "sel.auto",
+                                label = "Pilih Jenis Uji",
+                                choices = c("Durbin-Watson" = "dw",
+                                            "Breusch-Godfrey" = "bg",
+                                            "Newey-West" = "nw"),
+                                selected = "dw"),
                     verbatimTextOutput(outputId = "auto")),
                     
-                    box(title = "Uji Asumsi Multikolinearitas",
+                    box(title = "Multikolinearitas",
                     verbatimTextOutput(outputId = "multikol"))
                     )
                 )
@@ -150,10 +172,16 @@ server <- function(input, output, session){
     ))
   
   lm_reg <- reactive({
-    lm(as.formula(paste(input$varY," ~ ",paste(input$varX,collapse="+"))),data=inData())
+    if(is.null(input$varX)){
+      return(NULL)
+    }
+    else{
+    return(lm(as.formula(paste(input$varY," ~ ",paste(input$varX,collapse="+"))),data=inData()))
+    }
   })
   
   output$resid <- renderPlot({
+    req(lm_reg())
     par(mfrow= c(2,2))
     plot(lm_reg())
   })
@@ -163,17 +191,21 @@ server <- function(input, output, session){
   
   output$regsum <- renderPrint(summary(lm_reg()))
   
-  output$norm <- renderPrint(
+  output$norm <- renderPrint({
+    req(lm_reg())
     print(stats::shapiro.test(lm_reg()$residuals))
-    )
+    })
   
-  output$hetero <- renderPrint(
+  output$hetero <- renderPrint({
+    req(lm_reg())
     lmtest::bptest(lm_reg())
-  )
+  })
   
-  output$auto <- renderPrint(
+  output$auto <- renderPrint({
+    req(lm_reg())
     car::durbinWatsonTest(lm_reg())
-  )
+    
+  })
   
   mulcol <- reactive({
     req(input$varX)
