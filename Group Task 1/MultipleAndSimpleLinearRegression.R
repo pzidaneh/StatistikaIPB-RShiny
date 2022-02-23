@@ -39,49 +39,53 @@ ui <- dashboardPage(skin = "green",
                                                   ),
                                                   selected = ";")),
                                   
-                                  box(title = "Variabel Y", status = "primary", solidHeader = T,
+                                  conditionalPanel(
+                                    condition = "output.fileUploaded",
+                                    box(title = "Variabel Y", status = "primary", solidHeader = T,
                                       selectInput(inputId = "varY",
                                                   label = "Pilih Variabel Y:",
-                                                  choices = NULL)),
+                                                  choices = NULL))),
                                   
-                                  box(title = "Variabel X", status = "primary", solidHeader = T,
+                                  conditionalPanel(
+                                    condition = "output.fileUploaded",
+                                    box(title = "Variabel X", status = "primary", solidHeader = T,
                                       selectInput("varX",
                                                   label = "Pilih Variabel X:",
                                                   choices = NULL,
                                                   multiple = TRUE,
                                                   selected = NULL))
-                                ),
-                                fluidPage(
-                                  tabBox(
-                                    id = "tabset1",
-                                    height = "1000px",
-                                    width = 12,
-                                    
-                                    tabPanel("Data",
+                                  )),
+                                  fluidPage(
+                                    tabBox(
+                                      id = "tabset1",
+                                      height = "1000px",
+                                      width = 12,
+                                      
+                                      tabPanel("Data",
                                              dataTableOutput(outputId = "tabel")),
                                     
-                                    tabPanel(
-                                      "Data Summary",
-                                      verbatimTextOutput(outputId = "summary")),
+                                      tabPanel(
+                                        "Data Summary",
+                                        verbatimTextOutput(outputId = "summary")),
                                     
-                                    tabPanel(
-                                      "Plots",
-                                      box(title = "Plot Korelasi antar Variabel",
+                                      tabPanel(
+                                        "Plots",
+                                        box(title = "Plot Korelasi antar Variabel",
                                           collapsible = TRUE,
                                           plotOutput(outputId = "corr")),
-                                      box(title = "Plot Residu",
+                                        box(title = "Plot Residu",
                                           collapsible = T,
                                           plotOutput(outputId = "resid"))),
                                     
-                                    tabPanel(
-                                      "Model and Regression Summary",
-                                      verbatimTextOutput(outputId = "model"),
-                                      verbatimTextOutput(outputId = "regsum")),
+                                      tabPanel(
+                                        "Model and Regression Summary",
+                                        verbatimTextOutput(outputId = "model"),
+                                        verbatimTextOutput(outputId = "regsum")),
                                     
-                                    tabPanel(
-                                      "Uji Asumsi",
+                                      tabPanel(
+                                        "Uji Asumsi",
                                       
-                                      box(title = "Uji Asumsi Normalitas",
+                                        box(title = "Uji Asumsi Normalitas",
                                           selectInput(inputId = "sel.norm",
                                                       label = "Pilih Jenis Uji",
                                                       choices = c("Shapiro-Wilk"="shapiro",
@@ -92,7 +96,7 @@ ui <- dashboardPage(skin = "green",
                                                       selected = "shapiro"),
                                           verbatimTextOutput(outputId = "norm")),
                                       
-                                      box(title = "Uji Asumsi Heteroskedastisitas",
+                                        box(title = "Uji Asumsi Heteroskedastisitas",
                                           selectInput(inputId = "sel.hetero",
                                                       label = "Pilih Jenis Uji",
                                                       choices = c("Breusch-Pagan" = "bp",
@@ -103,7 +107,7 @@ ui <- dashboardPage(skin = "green",
                                                       selected = "bp"),
                                           verbatimTextOutput(outputId = "hetero")),
                                       
-                                      box(title = "Uji Asumsi Autokorelasi",
+                                        box(title = "Uji Asumsi Autokorelasi",
                                           selectInput(inputId = "sel.auto",
                                                       label = "Pilih Jenis Uji",
                                                       choices = c("Durbin-Watson" = "dw",
@@ -112,7 +116,7 @@ ui <- dashboardPage(skin = "green",
                                                       selected = "dw"),
                                           verbatimTextOutput(outputId = "auto")),
                                       
-                                      box(title = "Multikolinearitas",
+                                        box(title = "Multikolinearitas",
                                           verbatimTextOutput(outputId = "multikol"))
                                     )
                                   )
@@ -138,6 +142,12 @@ server <- function(input, output, session){
   return(dataIn)
   
   })
+  
+  
+  output$fileUploaded <- reactive({
+    return(!is.null(inData()))
+  })
+  outputOptions(output, 'fileUploaded', suspendWhenHidden=FALSE)
   
   observe(
     updateSelectInput(session = session, inputId = "varY", 
