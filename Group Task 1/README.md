@@ -1,3 +1,4 @@
-Nama: Link (deskripsi)
-1. https://jokogemblong.shinyapps.io/Multiple_Linear_Regression/ (Regresi Linear Sederhana dan Berganda)
-2. etc.
+No. | Title | Description | 
+----|-------|-------------|
+1   | Regresi Linear Sederhana dan Berganda | https://jokogemblong.shinyapps.io/Multiple_Linear_Regression/
+2   | etc.
