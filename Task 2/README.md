@@ -1,5 +1,4 @@
 # ShinyApp.io Links
-Format: [nama]: [url_link] [deskripsi]
 No. | Name  | Link  | Description
 ----|-------|-------|------------
 1   | Alvin | https://alvinium.shinyapps.io/secondTask    |
