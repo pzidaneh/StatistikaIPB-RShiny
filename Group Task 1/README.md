@@ -1,3 +1,6 @@
+# Group Task 1
+This assignment was given in the hope that the participants can understnad deeper about the process of web app development in a team framework.
+
 No. | Title | Link  | 
 ----|-------|-------|
 1   | Regresi Linear Sederhana dan Berganda | https://jokogemblong.shinyapps.io/Multiple_Linear_Regression/
