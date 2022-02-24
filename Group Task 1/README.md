@@ -3,5 +3,5 @@ This assignment was given in the hope that the participants can understand deepe
 
 No. | Title | Link  | 
 :--:|-------|-------|
-1   | **Regresi Linear OLS** | https://jokogemblong.shinyapps.io/Multiple_Linear_Regression/
+**1**   | `Regresi Linear OLS` | https://jokogemblong.shinyapps.io/Multiple_Linear_Regression/
 2   | etc.
