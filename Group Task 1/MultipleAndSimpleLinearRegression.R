@@ -42,50 +42,50 @@ ui <- dashboardPage(skin = "green",
                                   conditionalPanel(
                                     condition = "output.fileUploaded",
                                     box(title = "Variabel Y", status = "primary", solidHeader = T,
-                                      selectInput(inputId = "varY",
-                                                  label = "Pilih Variabel Y:",
-                                                  choices = NULL))),
+                                        selectInput(inputId = "varY",
+                                                    label = "Pilih Variabel Y:",
+                                                    choices = NULL))),
                                   
                                   conditionalPanel(
                                     condition = "output.fileUploaded",
                                     box(title = "Variabel X", status = "primary", solidHeader = T,
-                                      selectInput("varX",
-                                                  label = "Pilih Variabel X:",
-                                                  choices = NULL,
-                                                  multiple = TRUE,
-                                                  selected = NULL))
+                                        selectInput("varX",
+                                                    label = "Pilih Variabel X:",
+                                                    choices = NULL,
+                                                    multiple = TRUE,
+                                                    selected = NULL))
                                   )),
-                                  fluidPage(
-                                    tabBox(
-                                      id = "tabset1",
-                                      height = "1000px",
-                                      width = 12,
-                                      
-                                      tabPanel("Data",
+                                fluidPage(
+                                  tabBox(
+                                    id = "tabset1",
+                                    height = "1000px",
+                                    width = 12,
+                                    
+                                    tabPanel("Data",
                                              dataTableOutput(outputId = "tabel")),
                                     
-                                      tabPanel(
-                                        "Data Summary",
-                                        verbatimTextOutput(outputId = "summary")),
+                                    tabPanel(
+                                      "Data Summary",
+                                      verbatimTextOutput(outputId = "summary")),
                                     
-                                      tabPanel(
-                                        "Plots",
-                                        box(title = "Plot Korelasi antar Variabel",
+                                    tabPanel(
+                                      "Plots",
+                                      box(title = "Plot Korelasi antar Variabel",
                                           collapsible = TRUE,
                                           plotOutput(outputId = "corr")),
-                                        box(title = "Plot Residu",
+                                      box(title = "Plot Residu",
                                           collapsible = T,
                                           plotOutput(outputId = "resid"))),
                                     
-                                      tabPanel(
-                                        "Model and Regression Summary",
-                                        verbatimTextOutput(outputId = "model"),
-                                        verbatimTextOutput(outputId = "regsum")),
+                                    tabPanel(
+                                      "Model and Regression Summary",
+                                      verbatimTextOutput(outputId = "model"),
+                                      verbatimTextOutput(outputId = "regsum")),
                                     
-                                      tabPanel(
-                                        "Uji Asumsi",
+                                    tabPanel(
+                                      "Uji Asumsi",
                                       
-                                        box(title = "Uji Asumsi Normalitas",
+                                      box(title = "Uji Asumsi Normalitas",
                                           selectInput(inputId = "sel.norm",
                                                       label = "Pilih Jenis Uji",
                                                       choices = c("Shapiro-Wilk"="shapiro",
@@ -96,27 +96,23 @@ ui <- dashboardPage(skin = "green",
                                                       selected = "shapiro"),
                                           verbatimTextOutput(outputId = "norm")),
                                       
-                                        box(title = "Uji Asumsi Heteroskedastisitas",
+                                      box(title = "Uji Asumsi Heteroskedastisitas",
                                           selectInput(inputId = "sel.hetero",
                                                       label = "Pilih Jenis Uji",
                                                       choices = c("Breusch-Pagan" = "bp",
-                                                                  "Glejser" = "glesjer",
-                                                                  "Bartlett" = "bart",
-                                                                  "Park"= "park",
-                                                                  "White"= "white"),
+                                                                  "Glejser" = "glesjer"),
                                                       selected = "bp"),
                                           verbatimTextOutput(outputId = "hetero")),
                                       
-                                        box(title = "Uji Asumsi Autokorelasi",
+                                      box(title = "Uji Asumsi Autokorelasi",
                                           selectInput(inputId = "sel.auto",
                                                       label = "Pilih Jenis Uji",
                                                       choices = c("Durbin-Watson" = "dw",
-                                                                  "Breusch-Godfrey" = "bg",
-                                                                  "Newey-West" = "nw"),
+                                                                  "Breusch-Godfrey" = "bg"),
                                                       selected = "dw"),
                                           verbatimTextOutput(outputId = "auto")),
                                       
-                                        box(title = "Multikolinearitas",
+                                      box(title = "Multikolinearitas",
                                           verbatimTextOutput(outputId = "multikol"))
                                     )
                                   )
@@ -206,19 +202,58 @@ server <- function(input, output, session){
   
   output$regsum <- renderPrint(summary(lm_reg()))
   
+  
+  
+  asumsi.norm <- reactive({
+    req(lm_reg())
+    req(input$sel.norm)
+    if(input$sel.norm == "shapiro"){
+      return(stats::shapiro.test(lm_reg()$residuals))
+    }
+    else if(input$sel.norm == "ks"){
+      return(stats::ks.test(lm_reg()$residuals, y = pnorm))
+    }
+    else if(input$sel.norm == "anderson"){
+      return(nortest::ad.test(lm_reg()$residuals))
+    }
+  })
+  
   output$norm <- renderPrint({
     req(lm_reg())
-    print(stats::shapiro.test(lm_reg()$residuals))
+    print(asumsi.norm())
   })
+  
+  asumsi.hetero <- reactive({
+    req(lm_reg())
+    req(input$sel.hetero)
+    if(input$sel.hetero == "bp"){
+      return(lmtest::bptest(lm_reg()))
+    }
+    else if(input$sel.hetero == "glejser"){
+      return(skedastic::glesjer(lm_reg()))
+    }
+  })
+  
   
   output$hetero <- renderPrint({
     req(lm_reg())
-    lmtest::bptest(lm_reg())
+    print(asumsi.hetero())
+  })
+  
+  asumsi.auto <- reactive({
+    req(lm_reg())
+    if(input$sel.auto == "dw"){
+      return(car::durbinWatsonTest(lm_reg()))  
+    }
+    else if(input$sel.auto == "bg"){
+      return(lmtest::bgtest(lm_reg()))
+    }
+    
   })
   
   output$auto <- renderPrint({
     req(lm_reg())
-    car::durbinWatsonTest(lm_reg())
+    print(asumsi.auto())
     
   })
   
