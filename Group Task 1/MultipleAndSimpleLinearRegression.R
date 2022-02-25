@@ -70,50 +70,63 @@ ui <- dashboardPage(skin = "green",
                                     
                                     tabPanel(
                                       "Plots",
-                                      box(title = "Plot Korelasi antar Variabel",
-                                          collapsible = TRUE,
-                                          plotOutput(outputId = "corr")),
-                                      box(title = "Plot Residu",
-                                          collapsible = T,
-                                          plotOutput(outputId = "resid"))),
+                                      conditionalPanel(
+                                        condition = "output.fileUploaded",
+                                        box(title = "Plot Korelasi antar Variabel",
+                                            collapsible = TRUE,
+                                            plotOutput(outputId = "corr"))),
+                                      conditionalPanel(
+                                        condition = "output.regression",
+                                        box(title = "Plot Residu",
+                                            collapsible = T,
+                                            plotOutput(outputId = "resid")))),
                                     
                                     tabPanel(
                                       "Model and Regression Summary",
-                                      verbatimTextOutput(outputId = "model"),
-                                      verbatimTextOutput(outputId = "regsum")),
+                                      conditionalPanel(
+                                        condition = "output.regression",
+                                        verbatimTextOutput(outputId = "model"),
+                                        verbatimTextOutput(outputId = "regsum"))),
                                     
                                     tabPanel(
                                       "Uji Asumsi",
-                                      
-                                      box(title = "Uji Asumsi Normalitas",
-                                          selectInput(inputId = "sel.norm",
-                                                      label = "Pilih Jenis Uji",
-                                                      choices = c("Shapiro-Wilk"="shapiro",
-                                                                  "Kolmogorov-Smirnov"= "ks",
-                                                                  "Anderson-Darling" = "anderson",
-                                                                  "Chi-Square" = "chisq",
-                                                                  "Lilliefors" = "lili"),
-                                                      selected = "shapiro"),
-                                          verbatimTextOutput(outputId = "norm")),
-                                      
-                                      box(title = "Uji Asumsi Heteroskedastisitas",
-                                          selectInput(inputId = "sel.hetero",
-                                                      label = "Pilih Jenis Uji",
-                                                      choices = c("Breusch-Pagan" = "bp",
-                                                                  "Glejser" = "glesjer"),
-                                                      selected = "bp"),
-                                          verbatimTextOutput(outputId = "hetero")),
-                                      
-                                      box(title = "Uji Asumsi Autokorelasi",
-                                          selectInput(inputId = "sel.auto",
-                                                      label = "Pilih Jenis Uji",
-                                                      choices = c("Durbin-Watson" = "dw",
-                                                                  "Breusch-Godfrey" = "bg"),
-                                                      selected = "dw"),
-                                          verbatimTextOutput(outputId = "auto")),
-                                      
-                                      box(title = "Multikolinearitas",
-                                          verbatimTextOutput(outputId = "multikol"))
+                                      conditionalPanel(
+                                        condition = "output.regression",
+                                        box(title = "Uji Asumsi Normalitas",
+                                            height = "280px",
+                                            selectInput(inputId = "sel.norm",
+                                                        label = "Pilih Jenis Uji",
+                                                        choices = c("Shapiro-Wilk"="shapiro",
+                                                                    "Kolmogorov-Smirnov"= "ks",
+                                                                    "Anderson-Darling" = "anderson",
+                                                                    "Chi-Square" = "chisq",
+                                                                    "Lilliefors" = "lili"),
+                                                        selected = "shapiro"),
+                                            verbatimTextOutput(outputId = "norm")),
+                                        
+                                        box(title = "Uji Asumsi Heteroskedastisitas",
+                                            height = "280px",
+                                            selectInput(inputId = "sel.hetero",
+                                                        label = "Pilih Jenis Uji",
+                                                        choices = c("Breusch-Pagan" = "bp",
+                                                                    "Glejser" = "glesjer"),
+                                                        selected = "bp"),
+                                            verbatimTextOutput(outputId = "hetero")),
+                                        
+                                        box(title = "Uji Asumsi Autokorelasi",
+                                            height = "280px",
+                                            selectInput(inputId = "sel.auto",
+                                                        label = "Pilih Jenis Uji",
+                                                        choices = c("Durbin-Watson" = "dw",
+                                                                    "Breusch-Godfrey" = "bg"),
+                                                        selected = "dw"),
+                                            verbatimTextOutput(outputId = "auto")),
+                                        
+                                        conditionalPanel(
+                                          condition = "output.multi",
+                                          box(title = "Multikolinearitas",
+                                              height = "280px",
+                                              verbatimTextOutput(outputId = "multikol"))))
                                     )
                                   )
                                 ))
@@ -139,11 +152,20 @@ server <- function(input, output, session){
   
   })
   
-  
   output$fileUploaded <- reactive({
     return(!is.null(inData()))
   })
   outputOptions(output, 'fileUploaded', suspendWhenHidden=FALSE)
+  
+  output$regression <- reactive({
+    return(!is.null(lm_reg()))
+  })
+  outputOptions(output, 'regression', suspendWhenHidden=FALSE)
+  
+  output$multi <- reactive({
+    return(length(paste(input$varX)) != 1)
+  })
+  outputOptions(output, 'multi', suspendWhenHidden=FALSE)
   
   observe(
     updateSelectInput(session = session, inputId = "varY", 
