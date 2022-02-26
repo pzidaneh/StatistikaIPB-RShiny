@@ -1,110 +1,106 @@
-mySelectInput <- function(x) {
-    y <- colnames(df)
-    cond1 <- sapply(df, is.numeric)
-    
-    if (length(x) == 1) {
-        cond2 <- grepl(x, y, fixed = T)
-    } else {
-        cond2 <- grepl(paste(x, collapse = "|"), y, fixed = F)
-    }
-    
-    selectInput("column", label = "Select Variable Input",
-                choices = tidyColNames[which(cond1 & cond2)])
-}
-
-myMainPanel <- function(x) {
-    return(NULL)
-}
-
 dashboardPage(
-    dashboardHeader(title = "Covid-19 Viz. & Prediction"),
-    
+    dashboardHeader(title = "Forecast"),
     dashboardSidebar(
         sidebarMenu(
-            menuItem("Cases", tabName = "case"),
-            menuItem("Deaths", tabName = "death"),
-            menuItem("Vaccination", tabName = "vaccine"),
-            menuItem("Hospitalizations", tabName = "hospital"),
-            menuItem("Excess Mortality", tabName = "excess")
+            menuItem("Data", tabName = "dt",icon = icon("database")),
+            menuItem("Forecast", tabName = "fore", icon = icon("chart-line")),
+            menuItem("Advanced", tabName = "adv", icon = icon("table")),
+            # Decomposition, decomp -> Advanced, adv
+            h3(),
+            
+            selectInput("select", label = "Select Data",
+                        choices = c("Default (Rice Prices)" = "defRice",
+                                    "Default (Covid-19)" = "defCovid",
+                                    # add new dataset
+                                    "Custom" = "file")),
+            
+            conditionalPanel(condition = "input.select == 'file'",
+                             fileInput("fileinput", "Insert File")),
+            
+            #checkboxInput("first.row.header", "First Row as Header"),
+            checkboxInput("firstrowHeader", "First Row as Header"),
+            
+            #selectInput("DateVar", label = "Select a Date",
+            #            choices = colnames(df)),
+            selectInput("dateVar", label = "Select Date Column",
+                        choices = NULL),
+            
+            selectInput("forecastVar", label = "Select Forecast Column",
+                        choices = NULL),  # make NULL for updateSelectInput
+            
+            sliderInput("dataPeriod", "Data Period",
+                        min = 0, max = 100, value = 0),
+            # need start & end date, not just the period itself
+            # perhaps dataPeriod -> startDate & endDate?
+            
+            sliderInput("forecastPeriod", "Forecast Period Ahead",
+                        min = 0, max = 100, value = 10)
         )
     ),
     
     dashboardBody(
-        shinyDashboardThemes(theme = "grey_dark"),
+        tags$head(
+            tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")
+        ),
+        shinyDashboardThemes("poor_mans_flatly"),
         
         tabItems(
-            tabItem("case",
+            tabItem("dt",
                     fluidPage(
-                titlePanel("Covid-19 Cases"),
-                sidebarLayout(
-                    sidebarPanel(
-                        mySelectInput(c("case", "positive"))
-                    ),
-                    
-                    mainPanel(
-                        verbatimTextOutput("headCase"),
-                        plotOutput("lineChartCase")
+                        titlePanel("Data"),
+                        
+                        fluidRow(
+                            box(title = "Test Print", width = 10, solidHeader = T,
+                                verbatimTextOutput(outputId = "testPrint")),
+                            
+                            box(title = "Table", solidHeader = T,
+                                tableOutput(outputId = "dataTable")),
+                            
+                            box(title = "Plot", width = 10 ,solidHeader = T,
+                                plotOutput(outputId = "dataPlot"))
+                        )
                     )
-                )
-            )),
+            ),
             
-            tabItem("death", fluidPage(
-                titlePanel("Covid-19 Deaths"),
-                sidebarLayout(
-                    sidebarPanel(
-                        mySelectInput("death")
-                    ),
-                    
-                    mainPanel(
-                        verbatimTextOutput("headDeath"),
-                        plotOutput("lineChartDeath")
+            tabItem("fore",
+                    fluidPage(
+                        titlePanel("Forecasting"),
+                        
+                        sidebarLayout(
+                            sidebarPanel(
+                                selectInput("method", "Select a Method",
+                                            choices = c(
+                                                "Simple Moving Average" = "sma",
+                                                "Double Moving Average" = "dma",
+                                                "Single Exponential Smoothing" = "ses",
+                                                "Double Exponential Smoothing" = "des",
+                                                "Holt-Winter" = "hw",
+                                                "Auto Regression" = "ar",
+                                                "Cochrane-Orcutt" = "co",
+                                                "Hildreth-Lu" = "hl",
+                                                "ARIMA Models" = "arima"
+                                            ))
+                            ),
+                            
+                            mainPanel(
+                                verbatimTextOutput("testPrint2"),
+                                tableOutput(outputId = "forecastTable"),
+                                plotOutput(outputId = "forecastPlot")
+                            )
+                        )
                     )
-                )
-            )),
+            ),
             
-            tabItem("vaccine", fluidPage(
-                titlePanel("Covid-19 Vaccinations"),
-                sidebarLayout(
-                    sidebarPanel(
-                        mySelectInput(c("vaccin", "booster"))
-                    ),
-                    
-                    mainPanel(
-                        verbatimTextOutput("headVaccine"),
-                        plotOutput("lineChartVaccine")
+            tabItem("adv",  # from "decomp" to "adv"
+                    fluidPage(
+                        titlePanel("Advanced"),  # from Decomposition to Advanced
+                        
+                        mainPanel(
+                            plotOutput(outputId = "plotDecomposition"),
+                            tableOutput(outputId = "metrics")  # metrik to metrics
+                        )
                     )
-                )
-            )),
-            
-            tabItem("hospital", fluidPage(
-                titlePanel("Covid-19 Hospitalizations"),
-                sidebarLayout(
-                    sidebarPanel(
-                        mySelectInput(c("hosp", "patients"))
-                    ),
-                    
-                    mainPanel(
-                        verbatimTextOutput("headHospital"),
-                        plotOutput("lineChartHospital")
-                    )
-                )
-            )),
-            
-            tabItem("excess", fluidPage(
-                titlePanel("Excess Deaths"),
-                sidebarLayout(
-                    sidebarPanel(
-                        mySelectInput("excess")
-                    ),
-                    
-                    mainPanel(
-                        verbatimTextOutput("headExcess"),
-                        plotOutput("lineChartExcess")
-                    )
-                )
-            ))
-        )  # end of tabItems
+            )
+        )
     )
 )
-
-#runApp("C:/Users/LENOVO/Documents/00 IPB/Project R Shiny/3_Covid Dashboard")

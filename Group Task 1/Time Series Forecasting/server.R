@@ -1,56 +1,123 @@
-function(input, output, session) {
+function (input, output, session) {
     df1 <- reactive({
-        df1 <- df[df$location == input[[input$areaType]],
-                  c(input$column, "date")]
-        
-        df1 <- data.frame(Date = as.Date(df1$date),
-                          y = df1[[input$column]])
-        
-        colnames(df1) <- c("Date", input$column)
-        
-        return(df1)
-    })
-    
-    autoARIMA <- reactive({
-        if (input$season == F) {
-            autoARIMA <- forecast::auto.arima(df1()[input$column],
-                                              seasonal = F,
-                                              approximation = input$approx)
-            
-        } else if (input$season == T) {
-            autoARIMA <- bayesforecast::auto.sarima(as.ts(df1()[[input$column]]),
-                                                    seasonal = T)
+        if (input$select == "defRice") {
+            return(df.rice)
+        } else if (input$select == "defCovid") {
+            df.covid <- read.csv("https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv")
+            return(df.covid)
+        } else {
+            df1 <- read.csv(input$file$datapath,
+                            header = input$firstRowHeader,
+                            sep = input$delim)
+            return(df1)
         }
+    })
+    
+    observe({
+        updateSelectInput(session, "dateVar", label = "Select Date Column",
+                          choices = colnames(df1()))
+        updateSelectInput(session, "forecastVar", label = "Select Forecast Colum",
+                          choices = colnames(df1())[sapply(df1(), is.numeric)])
+    })
+    
+    ts.data <- reactive({
+        req(input$forecastVar); req(input$dateVar)
         
-        # xreg(?)
-        return(autoARIMA)
-    })
-    
-    fcARIMA <- reactive({
-        fcARIMA <- forecast::forecast(autoARIMA(), h = 60, level = c(0, 68))
+        ts.data <- xts::xts(x = df1()[[input$forecastVar]],
+                            order.by = as.Date(df1()[[input$dateVar]],
+                                               origin = "1970-01-01"))
+        # frequency = ...
+        # order.by -> need handling for non-datetime index
+        ts.data <- tsbox::ts_ts(ts.data)
         
-        return(fcARIMA)
+        return(ts.data)
     })
     
-    colourpicker::updateColourInput(session, "colour", label = "Pick A Colour",
-                                    showColour = "both", palette = "square",
-                                    returnName = T, allowTransparent = T)
-    
-    output$headExcess <- renderPrint({
-        print(paste("Entity      :", input[[input$areaType]]))
-        print(paste("Variable    :", input$column))
-        print(paste("Time Stamp  :", names(timestamp)))
-        print(autoARIMA())
+    ts.data.train <- reactive({
+        #n <- round(input$trainProportion*length(ts.data))
+        #return(ts.data()[1:n])
+        return(ts.data())
     })
     
-    output$lineChartExcess <- renderPlot({
-        #plot(df1(), type = "l", col = input$colour, lwd = input$lineWidth,
-        #     xlim = c(minDate, maxDate),
-        #     main = paste(input[[input$areaType]], input$column))
-        #lines(fcARIMA$mean)
-        plot(fcARIMA(), col = input$colour, lwd = input$lineWidth,
-             #xlim = c(minDate, maxDate),
-             ylim = c(0, max(c(df1()[[input$column]],
-                               fcARIMA()$upper), na.rm = T)))
+    # Menu 1: Original Data
+    output$dataTable <- renderTable(ts.data())
+    output$dataPlot <- renderPlot(plot(ts.data()))
+    level <- c(FALSE, 68)  # need custom level
+    
+    fc <- reactive({
+        if (input$method == "sma") {
+            tsModel <- SMA(ts.data.train(), n = 3)  # custom n
+            fc <- forecast(tsModel, h = input$forecastPeriod, level = level)
+            
+        } else if (input$method == "dma") {
+            fc <- myDMA(ts.data.train(), m = 3,  # custom m
+                        h = input$forecastPeriod)
+            
+        } else if (input$method == "ses") {
+            fc <- ses(ts.data.train(), h = input$forecastPeriod,
+                      alpha = NULL, level = level)  # custom alpha
+            
+        } else if (input$method == "des") {
+            fc <- forecast(HoltWinters(ts.data.train(), gamma = FALSE),
+                           h = input$forecastPeriod)
+            # custom alpha-beta
+            
+        } else if (input$method %in% c("ar", "co", "hl")) {
+            fit1 <- lm(ts.data.train() ~ time(ts.data.train()))
+            futureTime <- (end(ts.data.train()) - start(ts.data.train()))/
+                length(ts.data.train())
+            
+            fit.co <- orcutt::cochrane.orcutt(fit1, max.iter = 1000)
+            rho <- fit.co$rho
+            
+            if (input$method == "ar") {
+                pred1 <- NULL
+                
+            } else if (input$method == "co") {
+                coef.co <- coef(fit.co)
+                pred1 <- coef.co[[1]] + coef.co[[2]]*futureTime
+                
+            } else if (input$method == "hl") {
+                fit.hl <- HoRM::hildreth.lu(df$ipm, df$tahun, rho)
+                coef.hl <- coef(fit.hl)
+                pred1 <- coef.hl[[1]]/(1 - rho) + coef.hl[[2]]*futureTime
+                
+            }
+            fc <- ts(pred1)
+            
+        } else if (input$method == "arima") {
+                autoARIMA <- forecast::auto.arima(ts.data.train())
+                fc <- forecast::forecast(autoARIMA, h = input$forecastPeriod,
+                                         level = level)
+                
+            }
+        
+        return(fc)
     })
+    
+    # hw, co, lu, ar still error
+    
+    output$testPrint <- renderPrint({
+        print(input$select)
+        print(input$firstrowHeader)
+        print(paste("forecastVar: ", input$forecastVar))
+        print(paste("dateVar: ", input$dateVar))
+        
+        print(head(df))
+        #print(df1())
+        #print(ts.data.train())
+        
+    })
+    
+    # Menu 2: Forecasting
+    output$testPrint2 <- renderPrint({
+        try(print(length(ts.data.train())))
+        try(print(ts.data.train()))
+        try(print(fc()))
+    })
+    output$forecastTable <- renderTable(fc())
+    output$forecastPlot <- renderPlot(plot(fc()))
+    
+    # Menu 3: Advanced
+    output$plotDecomposition <- renderPlot(decompose(ts.data))
 }

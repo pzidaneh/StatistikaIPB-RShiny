@@ -2,27 +2,34 @@ library(shiny)
 library(shinydashboard)
 library(dashboardthemes)
 
-#df <- read.csv("https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv")
+library(forecast)
+library(TTR)
 
-firstUp <- function(x) {
-    substr(x, 1, 1) <- toupper(substr(x, 1, 1))
-    return(x)
+df.rice <- read.csv("C:/Users/LENOVO/Documents/00 IPB/Project R Shiny/1c task2/task2/task2_data.txt",
+               header = T, sep = ";")
+
+myDMA <- function (data, m, h) {
+    result <- list()
+    smooth.sma <- SMA(data, n = m)  # SMA
+    smooth.dma <- SMA(smooth.sma, n = m)  # DMA = SMA of SMA
+    
+    # DMA forecast formula
+    At <- 2*smooth.sma - smooth.dma
+    Bt <- 2/(m - 1)*(smooth.sma - smooth.dma)
+    
+    data.dma <- At + Bt  
+    forecast.dma <- c(NA, smooth.dma)
+    
+    bind <- cbind(data = c(data, NA),
+                  smooth.dma = c(smooth.dma, NA),
+                  forecast = forecast.dma)
+    
+    f <- At[length(At)] + Bt[length(Bt)]*(1:h)
+    
+    future <- data.frame(data = rep(NA, h),
+                         smooth.dma = rep(NA, h),
+                         forecast = f)
+    
+    return(ts(future$forecast, start = start(ts.data.test),
+              end = end(ts.data.test), frequency = frequency(ts.data.test)))
 }
-
-tidyColNames <- firstUp(colnames(df))  # capitalize 1st word of each sentence
-tidyColNames <- gsub("_", " ", tidyColNames)
-tidyColNames <- gsub("smoothed", "(smoothed)", tidyColNames)
-
-# "New vaccinations (smoothed) per million"
-# change to:
-# "New vaccinations per million (smoothed)"
-tidyColNames <- ifelse(grepl(" (smoothed) ", tidyColNames, fixed = T),
-                       paste0(gsub(" (smoothed) ", " ", tidyColNames, fixed = T),
-                              " (smoothed)"),
-                       tidyColNames)
-
-uniqueLoc <- unique(df[c('location', 'continent')])
-minDate <- min(as.Date(unique(df$date)))
-maxDate <- max(as.Date(unique(df$date)))
-
-#timestamp <- read.csv("https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data-last-updated-timestamp.txt")
