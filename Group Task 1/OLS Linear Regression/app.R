@@ -29,15 +29,16 @@ ui <- dashboardPage(skin = "green",
                                       checkboxInput(inputId = "header", label = "Baris pertama nama kolom", 
                                                     value = T, width = NULL),
                                       
-                                      selectInput(inputId = "pemisah",
-                                                  label = "Pilih Jenis Pemisah",
-                                                  choices = c("Semicolon (;)" = ";",
-                                                              "Comma (,)" =",",
-                                                              "Tab" = "\t",
-                                                              "Pipe (|)" = "|",
-                                                              "Spasi" = " "
-                                                  ),
-                                                  selected = ";")),
+                                      conditionalPanel(
+                                        condition = "output.ekstensi",
+                                        selectInput(inputId = "pemisah",
+                                                    label = "Pilih Jenis Pemisah",
+                                                    choices = c("Semicolon (;)" = ";",
+                                                                "Comma (,)" =",",
+                                                                "Tab" = "\t",
+                                                                "Pipe (|)" = "|",
+                                                                "Spasi" = " "),
+                                                    selected = ";"))),
                                   
                                   conditionalPanel(
                                     condition = "output.fileUploaded",
@@ -120,13 +121,23 @@ ui <- dashboardPage(skin = "green",
                                                         choices = c("Durbin-Watson" = "dw",
                                                                     "Breusch-Godfrey" = "bg"),
                                                         selected = "dw"),
-                                            verbatimTextOutput(outputId = "auto")),
-                                        
-                                        conditionalPanel(
-                                          condition = "output.multi",
-                                          box(title = "Multikolinearitas",
-                                              height = "280px",
-                                              verbatimTextOutput(outputId = "multikol"))))
+                                            verbatimTextOutput(outputId = "auto"))
+                                        )
+                                    ),
+                                    
+                                    tabPanel(
+                                      "Diagnostik",
+                                      box(title = "Pencilan dan Amatan Berpengaruh",
+                                          height = "280px",
+                                          plotOutput(outputId = "diag")),
+                                      
+                                      conditionalPanel(
+                                        condition = "output.multi",
+                                        box(title = "Multikolinearitas",
+                                            height = "280px",
+                                            verbatimTextOutput(outputId = "multikol")))
+                                      
+                                      
                                     )
                                   )
                                 ))
@@ -139,6 +150,8 @@ server <- function(input, output, session){
   ext <- tools::file_ext(file$datapath)
   req(file)
   
+  if(ext == "txt" | ext == "csv"){
+  
   dataIn <- read.table(file$datapath, sep = input$pemisah, header = input$header)
   
   if(input$header == T) {
@@ -149,8 +162,20 @@ server <- function(input, output, session){
   }
   
   return(dataIn)
+  }
+  
+  else{
+    dataIn <- readxl::read_excel(file$datapath, col_names = input$header)
+  }
   
   })
+  
+  output$ekstensi <- reactive({file <- input$file
+    eks <- tools::file_ext(file$datapath)
+    req(file)
+    return(eks != "xlsx")
+  })
+  outputOptions(output, 'ekstensi', suspendWhenHidden=FALSE)
   
   output$fileUploaded <- reactive({
     return(!is.null(inData()))
@@ -172,10 +197,10 @@ server <- function(input, output, session){
                       label = "Variabel", choices = colnames(inData())[sapply(inData(), is.numeric)])
   )
   
-  observe(
-    updateSelectInput(session = session, inputId = "varX", 
-                      label = "Variabel", choices = colnames(inData())[sapply(inData(), is.numeric)])
-  )
+  # When the Choose button is clicked, update the selector
+  observeEvent(input$varY,{
+   updateSelectInput(session = session, inputId = "varX",label = "Variabel",
+                      choices = colnames(inData())[sapply(inData(), is.numeric)][!(colnames(inData())[sapply(inData(), is.numeric)] %in% input$varY)])})
   
   output$tabel <- renderDataTable(inData(), options = list(pageLength = 10))
   
@@ -277,6 +302,11 @@ server <- function(input, output, session){
     req(lm_reg())
     print(asumsi.auto())
     
+  })
+  
+  output$diag <- renderPlot({
+    req(lm_reg())
+    olsrr::ols_plot_resid_lev(lm_reg())
   })
   
   mulcol <- reactive({
