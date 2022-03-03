@@ -78,9 +78,13 @@ ui <- dashboardPage(skin = "green",
                                             plotOutput(outputId = "corr"))),
                                       conditionalPanel(
                                         condition = "output.regression",
-                                        box(title = "Plot Residu",
+                                        box(title = "Plot Residual",
                                             collapsible = T,
-                                            plotOutput(outputId = "resid")))),
+                                            plotOutput(outputId = "resid"))),
+                                      box(title = "Plot Tebaran",
+                                          collapsible = T,
+                                          plotOutput(outputId = "scatter")
+                                      )),
                                     
                                     tabPanel(
                                       "Model and Regression Summary",
@@ -122,7 +126,7 @@ ui <- dashboardPage(skin = "green",
                                                                     "Breusch-Godfrey" = "bg"),
                                                         selected = "dw"),
                                             verbatimTextOutput(outputId = "auto"))
-                                        )
+                                      )
                                     ),
                                     
                                     tabPanel(
@@ -151,17 +155,17 @@ server <- function(input, output, session){
   req(file)
   
   if(ext == "txt" | ext == "csv"){
-  
-  dataIn <- read.table(file$datapath, sep = input$pemisah, header = input$header)
-  
-  if(input$header == T) {
-    main <- colnames(dataIn)
     
-  } else {
-    main <- NULL
-  }
-  
-  return(dataIn)
+    dataIn <- read.table(file$datapath, sep = input$pemisah, header = input$header)
+    
+    if(input$header == T) {
+      main <- colnames(dataIn)
+      
+    } else {
+      main <- NULL
+    }
+    
+    return(dataIn)
   }
   
   else{
@@ -171,9 +175,9 @@ server <- function(input, output, session){
   })
   
   output$ekstensi <- reactive({file <- input$file
-    eks <- tools::file_ext(file$datapath)
-    req(file)
-    return(eks != "xlsx")
+  eks <- tools::file_ext(file$datapath)
+  req(file)
+  return(eks != "xlsx")
   })
   outputOptions(output, 'ekstensi', suspendWhenHidden=FALSE)
   
@@ -199,7 +203,7 @@ server <- function(input, output, session){
   
   # When the Choose button is clicked, update the selector
   observeEvent(input$varY,{
-   updateSelectInput(session = session, inputId = "varX",label = "Variabel",
+    updateSelectInput(session = session, inputId = "varX",label = "Variabel",
                       choices = colnames(inData())[sapply(inData(), is.numeric)][!(colnames(inData())[sapply(inData(), is.numeric)] %in% input$varY)])})
   
   output$tabel <- renderDataTable(inData(), options = list(pageLength = 10))
@@ -210,7 +214,7 @@ server <- function(input, output, session){
       type = "text",
       title = "Descriptive statistics",
       digits = 1,
-      out = "table1.txt")
+      out = "table1.text")
   )
   
   dtNumerik <- reactive({
@@ -244,6 +248,23 @@ server <- function(input, output, session){
     plot(lm_reg())
   })
   
+  final <- reactive({
+    if(length(paste(input$varX)) == 1){
+      
+      x <- as.numeric(inData()[[input$varX]])
+      y <- as.numeric(inData()[[input$varY]])
+      
+      plot(x, y, pch = 16, col = "blue", xlab = paste(input$varX), 
+           ylab = paste(input$varY)) + abline(lm_reg(), col = "red")}
+    else{
+      return(NULL)
+    }
+  })
+  
+  output$scatter <- renderPlot({
+    req(lm_reg())
+    final()
+    })
   
   output$model <- renderPrint(lm_reg())
   
