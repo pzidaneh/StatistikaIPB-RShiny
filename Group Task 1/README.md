@@ -3,6 +3,6 @@ This assignment was given in the hope that the participants can understand deepe
 
 No.   | Title                 | Developer                         | Link  | 
 :----:|-----------------------|-----------------------------------|-------|
-**1** | OLS Linear Regression | `Tony Alfan` `Muhammad Rizky N`   | https://jokogemblong.shinyapps.io/Multiple_Linear_Regression/
+**1** | OLS Linear Regression | `Tony Alfan` `Muhammad Rizky N`   | [link](https://jokogemblong.shinyapps.io/Multiple_Linear_Regression/)
 **2** | Time Series Forecasting | `Perisai Zidane H` `Kayla Fakhriyya J`  | |
 **3** | etc.
