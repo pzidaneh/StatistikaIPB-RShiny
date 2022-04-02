@@ -1,7 +1,7 @@
 function (input, output, session) {
     df1 <- reactive({
         if (input$select == "defRice") {
-            return(df.rice)
+            return(df)
         } else if (input$select == "defCovid") {
             df.covid <- read.csv("https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv")
             return(df.covid)
@@ -14,10 +14,15 @@ function (input, output, session) {
     })
     
     observe({
+        if (input$select == "file"){
+            req(input$file)
+        }
         updateSelectInput(session, "dateVar", label = "Select Date Column",
                           choices = colnames(df1()))
-        updateSelectInput(session, "forecastVar", label = "Select Forecast Colum",
+        updateSelectInput(session, "forecastVar", label = "Select Forecast Column",
                           choices = colnames(df1())[sapply(df1(), is.numeric)])
+        updateDateRangeInput(session, "dataPeriod", label = "Data Period:",
+                             max = nrow(df1()))
     })
     
     ts.data <- reactive({
@@ -86,11 +91,11 @@ function (input, output, session) {
             fc <- ts(pred1)
             
         } else if (input$method == "arima") {
-                autoARIMA <- forecast::auto.arima(ts.data.train())
-                fc <- forecast::forecast(autoARIMA, h = input$forecastPeriod,
-                                         level = level)
-                
-            }
+            autoARIMA <- forecast::auto.arima(ts.data.train())
+            fc <- forecast::forecast(autoARIMA, h = input$forecastPeriod,
+                                     level = level)
+            
+        }
         
         return(fc)
     })
@@ -115,7 +120,7 @@ function (input, output, session) {
         try(print(ts.data.train()))
         try(print(fc()))
     })
-    output$forecastTable <- renderTable(fc())
+    output$forecastTable <- renderDataTable(fc())
     output$forecastPlot <- renderPlot(plot(fc()))
     
     # Menu 3: Advanced
