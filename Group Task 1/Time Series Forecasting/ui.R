@@ -2,6 +2,7 @@ dashboardPage(
     dashboardHeader(title = "Forecast"),
     dashboardSidebar(
         sidebarMenu(
+            menuItem("Exploration", tabName = "explore", icon = icon("search")),
             menuItem("Data", tabName = "dt",icon = icon("database")),
             menuItem("Forecast", tabName = "fore", icon = icon("chart-line")),
             menuItem("Advanced", tabName = "adv", icon = icon("table")),
@@ -45,6 +46,26 @@ dashboardPage(
         shinyDashboardThemes("poor_mans_flatly"),
         
         tabItems(
+            tabItem("explore",
+                      fluidPage(
+                        titlePanel("Exploration"),
+
+                        fluidRow(
+                          box(title = "ADF Test", solidHeader = T,
+                              tableOutput(outputId = "ADFTest")),
+
+                          box(title = "ACF Plot", solidHeader = T,
+                              plotOutput(outputId = "PlotACF")),
+
+                          box(title = "PACF Plot", solidHeader = T,
+                              plotOutput(outputId = "PlotPACF")),
+
+                          box(title = "EACF Plot", solidHeader = T,
+                              plotOutput(outputId = "PlotEACF")),
+                        )
+                      )
+            ),
+            
             tabItem("dt",
                     fluidPage(
                         titlePanel("Data"),
@@ -70,16 +91,9 @@ dashboardPage(
                             sidebarPanel(
                                 selectInput("method", "Select a Method",
                                             choices = c(
-                                                "Simple Moving Average" = "sma",
-                                                "Double Moving Average" = "dma",
-                                                "Single Exponential Smoothing" = "ses",
-                                                "Double Exponential Smoothing" = "des",
-                                                "Holt-Winter" = "hw",
-                                                "Auto Regression" = "ar",
-                                                "Cochrane-Orcutt" = "co",
-                                                "Hildreth-Lu" = "hl",
-                                                "ARIMA Models" = "arima"
-                                            ))
+                                                  "Holt-Winter" = "hw",
+                                                  "ARIMA Models" = "arima"
+                                                ))
                             ),
                             
                             mainPanel(
