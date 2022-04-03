@@ -114,6 +114,22 @@ function (input, output, session) {
         
     })
     
+    # Menu 1: Exploration
+    output$ADFTest <- renderPrint({
+        print(adf.test(ts.data.train(), k = 7))
+        print(adf.test(ts.data.train(), k = 30))
+        print(adf.test(ts.data.train(), k = 90))
+        # must allow user to choose their own k (lag)
+        # and/or show plot of all p-value
+    })
+    
+    output$plotACF <- renderPlot(acf(ts.data.train()))
+    output$plotPACF <- renderPlot(pacf(ts.data.train()))
+    # must allow user to choose their own max.lag
+    
+    output$EACF <- renderPrint(eacf(ts.data.train()))
+    # must allow user to choose their own max AR/MA order
+    
     # Menu 2: Forecasting
     output$testPrint2 <- renderPrint({
         try(print(length(ts.data.train())))
