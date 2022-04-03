@@ -1,8 +1,9 @@
 library(shiny)
 library(shinydashboard)
 library(dashboardthemes)
-
 library(forecast)
+library(tseries)
+library(TSA)
 library(TTR)
 
 df.rice <- read.csv("C:/Users/LENOVO/Documents/00 IPB/Project R Shiny/1c task2/task2/task2_data.txt",
