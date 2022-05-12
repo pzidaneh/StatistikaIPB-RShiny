@@ -103,11 +103,11 @@ ui <- dashboardPage(skin = "green",
                                                         label = "Pilih Jenis Uji",
                                                         choices = c("Shapiro-Wilk"="shapiro",
                                                                     "Kolmogorov-Smirnov"= "ks",
-                                                                    "Anderson-Darling" = "anderson",
-                                                                    "Chi-Square" = "chisq",
-                                                                    "Lilliefors" = "lili"),
+                                                                    "Anderson-Darling" = "anderson"
+                                                                    ),
                                                         selected = "shapiro"),
-                                            verbatimTextOutput(outputId = "norm")),
+                                            verbatimTextOutput(outputId = "norm"),
+                                            verbatimTextOutput(outputId = "norm.result")),
                                         
                                         box(title = "Uji Asumsi Heteroskedastisitas",
                                             height = "280px",
@@ -116,7 +116,8 @@ ui <- dashboardPage(skin = "green",
                                                         choices = c("Breusch-Pagan" = "bp",
                                                                     "Glejser" = "glesjer"),
                                                         selected = "bp"),
-                                            verbatimTextOutput(outputId = "hetero")),
+                                            verbatimTextOutput(outputId = "hetero"),
+                                            verbatimTextOutput(outputId = "hetero.result")),
                                         
                                         box(title = "Uji Asumsi Autokorelasi",
                                             height = "280px",
@@ -125,7 +126,8 @@ ui <- dashboardPage(skin = "green",
                                                         choices = c("Durbin-Watson" = "dw",
                                                                     "Breusch-Godfrey" = "bg"),
                                                         selected = "dw"),
-                                            verbatimTextOutput(outputId = "auto"))
+                                            verbatimTextOutput(outputId = "auto"),
+                                            verbatimTextOutput(outputId = "auto.result"))
                                       )
                                     ),
                                     
@@ -286,9 +288,24 @@ server <- function(input, output, session){
     }
   })
   
+  norm.result <- reactive({
+    req(asumsi.norm())
+    if(asumsi.norm()$p.value > 0.05) {
+      return("Hasil menunjukkan bahwa P-value > 0.05 sehingga Tak Tolak H0 atau dapat dikatakan bahwa belum cukup bukti untuk mengatakan sisaan tidak menyebar normal")
+    }
+    else{
+      return("Hasil menunjukkan bahwa P-value < 0.05 sehingga Tolak H0 atau dapat dikatakan bahwa cukup bukti untuk mengatakan sisaan tidak menyebar normal")
+    }
+  })
+  
   output$norm <- renderPrint({
     req(lm_reg())
     print(asumsi.norm())
+  })
+  
+  output$norm.result <- renderPrint({
+    req(norm.result())
+    print(norm.result())
   })
   
   asumsi.hetero <- reactive({
@@ -302,16 +319,31 @@ server <- function(input, output, session){
     }
   })
   
+  hetero.result <- reactive({
+    req(asumsi.hetero())
+    if(asumsi.hetero()$p.value > 0.05){
+      return("Hasil menunjukkan bahwa P-value > 0.05 sehingga Tak Tolak H0 atau dapat dikatakan bahwa belum cukup bukti untuk mengatakan sisaan tidak heterogen")
+    }  
+    else{
+      return("Hasil menunjukkan bahwa P-value < 0.05 sehingga Tolak H0 atau dapat dikatakan bahwa cukup bukti untuk mengatakan sisaan heterogen")
+    }
+  })
+  
   
   output$hetero <- renderPrint({
     req(lm_reg())
     print(asumsi.hetero())
   })
   
+  output$hetero.result <- renderPrint({
+    req(hetero.result())
+    print(hetero.result())
+  })
+  
   asumsi.auto <- reactive({
     req(lm_reg())
     if(input$sel.auto == "dw"){
-      return(car::durbinWatsonTest(lm_reg()))  
+      return(lmtest::dwtest(lm_reg()))  
     }
     else if(input$sel.auto == "bg"){
       return(lmtest::bgtest(lm_reg()))
@@ -319,10 +351,25 @@ server <- function(input, output, session){
     
   })
   
+  auto.result <- reactive({
+    req(asumsi.auto())
+    if(asumsi.auto()$p.value > 0.05){
+      return("Hasil menunjukkan bahwa P-value > 0.05 sehingga Tak Tolak H0 atau dapat dikatakan bahwa belum cukup bukti untuk mengatakan terdapat Autokorelasi")
+    }
+    else{
+      return("Hasil menunjukkan bahwa P-value < 0.05 sehingga Tolak H0 atau dapat dikatakan bahwa cukup bukti untuk mengatakan terdapat Autokorelasi")
+    }
+  })
+  
   output$auto <- renderPrint({
     req(lm_reg())
     print(asumsi.auto())
     
+  })
+  
+  output$auto.result <- renderPrint({
+    req(auto.result())
+    print(auto.result())
   })
   
   output$diag <- renderPlot({
