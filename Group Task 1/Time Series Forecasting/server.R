@@ -1,10 +1,15 @@
 function (input, output, session) {
     df1 <- reactive({
         if (input$select == "defRice") {
-            return(df)
-        } else if (input$select == "defCovid") {
-            df.covid <- read.csv("https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv")
-            return(df.covid)
+            return(df.rice)
+        
+        # Default Covid Data will take long time to read if offline
+        # Will only open when ready to deploy
+        
+        #} else if (input$select == "defCovid") {
+        #    df.covid <- read.csv("https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv")
+        #    return(df.covid)
+        
         } else {
             df1 <- read.csv(input$file$datapath,
                             header = input$firstRowHeader,
@@ -44,77 +49,34 @@ function (input, output, session) {
         return(ts.data())
     })
     
-    # Menu 1: Original Data
+    # Menu 1: Data ####
     output$dataTable <- renderTable(ts.data())
     output$dataPlot <- renderPlot(plot(ts.data()))
     level <- c(FALSE, 68)  # need custom level
     
-    fc <- reactive({
-        if (input$method == "sma") {
-            tsModel <- SMA(ts.data.train(), n = 3)  # custom n
-            fc <- forecast(tsModel, h = input$forecastPeriod, level = level)
-            
-        } else if (input$method == "dma") {
-            fc <- myDMA(ts.data.train(), m = 3,  # custom m
-                        h = input$forecastPeriod)
-            
-        } else if (input$method == "ses") {
-            fc <- ses(ts.data.train(), h = input$forecastPeriod,
-                      alpha = NULL, level = level)  # custom alpha
-            
-        } else if (input$method == "des") {
-            fc <- forecast(HoltWinters(ts.data.train(), gamma = FALSE),
-                           h = input$forecastPeriod)
-            # custom alpha-beta
-            
-        } else if (input$method %in% c("ar", "co", "hl")) {
-            fit1 <- lm(ts.data.train() ~ time(ts.data.train()))
-            futureTime <- (end(ts.data.train()) - start(ts.data.train()))/
-                length(ts.data.train())
-            
-            fit.co <- orcutt::cochrane.orcutt(fit1, max.iter = 1000)
-            rho <- fit.co$rho
-            
-            if (input$method == "ar") {
-                pred1 <- NULL
-                
-            } else if (input$method == "co") {
-                coef.co <- coef(fit.co)
-                pred1 <- coef.co[[1]] + coef.co[[2]]*futureTime
-                
-            } else if (input$method == "hl") {
-                fit.hl <- HoRM::hildreth.lu(df$ipm, df$tahun, rho)
-                coef.hl <- coef(fit.hl)
-                pred1 <- coef.hl[[1]]/(1 - rho) + coef.hl[[2]]*futureTime
-                
-            }
-            fc <- ts(pred1)
-            
-        } else if (input$method == "arima") {
-            autoARIMA <- forecast::auto.arima(ts.data.train())
-            fc <- forecast::forecast(autoARIMA, h = input$forecastPeriod,
-                                     level = level)
-            
-        }
-        
-        return(fc)
-    })
-    
-    # hw, co, lu, ar still error
-    
+    # Test Print Data ####
     output$testPrint <- renderPrint({
-        print(input$select)
-        print(input$firstrowHeader)
-        print(paste("forecastVar: ", input$forecastVar))
-        print(paste("dateVar: ", input$dateVar))
+        print("Hello! Welcome to our Time-Series Forecasting Program")
         
-        print(head(df))
-        #print(df1())
+        #print(paste("input$select", input$select))
+        #print(paste("input$firstrowHeader", input$firstrowHeader))
+        #print(paste("forecastVar: ", input$forecastVar))
+        #print(paste("dateVar: ", input$dateVar))
+        
+        #print("head(df1())")
+        #print(head(df1()))
+        
+        #print("ts.data()")
+        #print(ts.data())
+        
+        #print("ts.data.train()")
         #print(ts.data.train())
-        
     })
     
-    # Menu 1: Exploration
+    # Test Print Table ####
+    output$dataTable <- renderTable(head(df1()))
+    
+    # Menu 2: Exploration ####
     output$ADFTest <- renderPrint({
         print(adf.test(ts.data.train(), k = 7))
         print(adf.test(ts.data.train(), k = 30))
@@ -130,7 +92,19 @@ function (input, output, session) {
     output$EACF <- renderPrint(eacf(ts.data.train()))
     # must allow user to choose their own max AR/MA order
     
-    # Menu 2: Forecasting
+    # Menu 3: Forecasting
+    fc <- reactive({
+        if (input$method == "hw") {
+            tsModel <- HoltWinters(ts.data.train())
+            
+        } else if (input$method == "arima") {
+            tsModel <- auto.arima(ts.data.train())
+            
+        }
+        fc <- forecast(tsModel, h = input$forecastPeriod, level = level)
+        return(fc)
+    })
+    
     output$testPrint2 <- renderPrint({
         try(print(length(ts.data.train())))
         try(print(ts.data.train()))
@@ -139,6 +113,6 @@ function (input, output, session) {
     output$forecastTable <- renderDataTable(fc())
     output$forecastPlot <- renderPlot(plot(fc()))
     
-    # Menu 3: Advanced
+    # Menu 4: Advanced
     output$plotDecomposition <- renderPlot(decompose(ts.data))
 }
