@@ -2,8 +2,8 @@ dashboardPage(
     dashboardHeader(title = "Forecast"),
     dashboardSidebar(
         sidebarMenu(
-            menuItem("Exploration", tabName = "explore", icon = icon("search")),
             menuItem("Data", tabName = "dt",icon = icon("database")),
+            menuItem("Exploration", tabName = "explore", icon = icon("search")),
             menuItem("Forecast", tabName = "fore", icon = icon("chart-line")),
             menuItem("Advanced", tabName = "adv", icon = icon("table")),
             # Decomposition, decomp -> Advanced, adv
@@ -11,7 +11,7 @@ dashboardPage(
             
             selectInput("select", label = "Select Data",
                         choices = c("Default (Rice Prices)" = "defRice",
-                                    "Default (Covid-19)" = "defCovid",
+                                    #"Default (Covid-19)" = "defCovid",
                                     # add new dataset
                                     "Custom" = "file")),
             
@@ -45,32 +45,14 @@ dashboardPage(
         ),
         shinyDashboardThemes("poor_mans_flatly"),
         
+        
         tabItems(
-            tabItem("explore",
-                      fluidPage(
-                        titlePanel("Exploration"),
-
-                        fluidRow(
-                          box(title = "ADF Test", solidHeader = T,
-                              tableOutput(outputId = "ADFTest")),
-
-                          box(title = "ACF Plot", solidHeader = T,
-                              plotOutput(outputId = "PlotACF")),
-
-                          box(title = "PACF Plot", solidHeader = T,
-                              plotOutput(outputId = "PlotPACF")),
-
-                          box(title = "EACF Plot", solidHeader = T,
-                              plotOutput(outputId = "PlotEACF")),
-                        )
-                      )
-            ),
-            
             tabItem("dt",
                     fluidPage(
                         titlePanel("Data"),
                         
                         fluidRow(
+                            # Test Print Data ####
                             box(title = "Test Print", width = 10, solidHeader = T,
                                 verbatimTextOutput(outputId = "testPrint")),
                             
@@ -83,6 +65,28 @@ dashboardPage(
                     )
             ),
             
+            tabItem("explore",
+                    fluidPage(
+                        titlePanel("Exploration"),
+                        
+                        fluidRow(
+                            box(title = "ADF Test", solidHeader = T,
+                                verbatimTextOutput(outputId = "ADFTest")),
+                            
+                            box(title = "ACF Plot", solidHeader = T,
+                                plotOutput(outputId = "PlotACF")),
+                            
+                            box(title = "PACF Plot", solidHeader = T,
+                                plotOutput(outputId = "PlotPACF")),
+                            
+                            box(title = "EACF Plot", solidHeader = T,
+                                verbatimTextOutput(outputId = "PlotEACF")),
+                        )
+                    )
+            ),
+            
+            
+            
             tabItem("fore",
                     fluidPage(
                         titlePanel("Forecasting"),
@@ -91,9 +95,9 @@ dashboardPage(
                             sidebarPanel(
                                 selectInput("method", "Select a Method",
                                             choices = c(
-                                                  "Holt-Winter" = "hw",
-                                                  "ARIMA Models" = "arima"
-                                                ))
+                                                "Holt-Winter" = "hw",
+                                                "ARIMA Models" = "arima"
+                                            ))
                             ),
                             
                             mainPanel(
