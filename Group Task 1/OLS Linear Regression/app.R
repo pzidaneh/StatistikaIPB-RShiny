@@ -101,11 +101,11 @@ ui <- dashboardPage(skin = "green",
                                             height = "280px",
                                             selectInput(inputId = "sel.norm",
                                                         label = "Pilih Jenis Uji",
-                                                        choices = c("Shapiro-Wilk"="shapiro",
-                                                                    "Kolmogorov-Smirnov"= "ks",
-                                                                    "Anderson-Darling" = "anderson"
-                                                                    ),
-                                                        selected = "shapiro"),
+                                                        choices = c("Shapiro-Wilk"="Shapiro-Wilk",
+                                                                    "Kolmogorov-Smirnov"= "Kolmogorov-Smirnov",
+                                                                    "Anderson-Darling" = "Anderson-Darling"
+                                                        ),
+                                                        selected = "Shapiro-Wilk"),
                                             verbatimTextOutput(outputId = "norm"),
                                             verbatimTextOutput(outputId = "norm.result")),
                                         
@@ -113,9 +113,9 @@ ui <- dashboardPage(skin = "green",
                                             height = "280px",
                                             selectInput(inputId = "sel.hetero",
                                                         label = "Pilih Jenis Uji",
-                                                        choices = c("Breusch-Pagan" = "bp",
-                                                                    "Glejser" = "glesjer"),
-                                                        selected = "bp"),
+                                                        choices = c("Breusch-Pagan" = "Breusch-Pagan",
+                                                                    "Glesjer" = "Glesjer"),
+                                                        selected = "Breusch-Pagan"),
                                             verbatimTextOutput(outputId = "hetero"),
                                             verbatimTextOutput(outputId = "hetero.result")),
                                         
@@ -123,11 +123,15 @@ ui <- dashboardPage(skin = "green",
                                             height = "280px",
                                             selectInput(inputId = "sel.auto",
                                                         label = "Pilih Jenis Uji",
-                                                        choices = c("Durbin-Watson" = "dw",
-                                                                    "Breusch-Godfrey" = "bg"),
-                                                        selected = "dw"),
+                                                        choices = c("Durbin-Watson" = "Durbin-Watson",
+                                                                    "Breusch-Godfrey" = "Breusch-Godfrey"),
+                                                        selected = "Durbin-Watson"),
                                             verbatimTextOutput(outputId = "auto"),
-                                            verbatimTextOutput(outputId = "auto.result"))
+                                            verbatimTextOutput(outputId = "auto.result")),
+                                        
+                                        box(title = "Ringkasan",
+                                            height = "280px",
+                                            tableOutput(outputId = "ringkas_uji"))
                                       )
                                     ),
                                     
@@ -141,6 +145,7 @@ ui <- dashboardPage(skin = "green",
                                         condition = "output.multi",
                                         box(title = "Multikolinearitas",
                                             height = "280px",
+                                            textOutput("note_vif"),
                                             verbatimTextOutput(outputId = "multikol")))
                                       
                                       
@@ -266,7 +271,7 @@ server <- function(input, output, session){
   output$scatter <- renderPlot({
     req(lm_reg())
     final()
-    })
+  })
   
   output$model <- renderPrint(lm_reg())
   
@@ -277,13 +282,13 @@ server <- function(input, output, session){
   asumsi.norm <- reactive({
     req(lm_reg())
     req(input$sel.norm)
-    if(input$sel.norm == "shapiro"){
+    if(input$sel.norm == "Shapiro-Wilk"){
       return(stats::shapiro.test(lm_reg()$residuals))
     }
-    else if(input$sel.norm == "ks"){
+    else if(input$sel.norm == "Kolmogorov-Smirnov"){
       return(stats::ks.test(lm_reg()$residuals, y = pnorm))
     }
-    else if(input$sel.norm == "anderson"){
+    else if(input$sel.norm == "Anderson-Darling"){
       return(nortest::ad.test(lm_reg()$residuals))
     }
   })
@@ -291,10 +296,10 @@ server <- function(input, output, session){
   norm.result <- reactive({
     req(asumsi.norm())
     if(asumsi.norm()$p.value > 0.05) {
-      return("Hasil menunjukkan bahwa P-value > 0.05 sehingga Tak Tolak H0 atau dapat dikatakan bahwa belum cukup bukti untuk mengatakan sisaan tidak menyebar normal")
+      return("Menyebar normal")
     }
     else{
-      return("Hasil menunjukkan bahwa P-value < 0.05 sehingga Tolak H0 atau dapat dikatakan bahwa cukup bukti untuk mengatakan sisaan tidak menyebar normal")
+      return("Tidak menyebar normal")
     }
   })
   
@@ -311,7 +316,7 @@ server <- function(input, output, session){
   asumsi.hetero <- reactive({
     req(lm_reg())
     req(input$sel.hetero)
-    if(input$sel.hetero == "bp"){
+    if(input$sel.hetero == "Breusch-Pagan"){
       return(lmtest::bptest(lm_reg()))
     }
     else if(input$sel.hetero == "glejser"){
@@ -322,10 +327,10 @@ server <- function(input, output, session){
   hetero.result <- reactive({
     req(asumsi.hetero())
     if(asumsi.hetero()$p.value > 0.05){
-      return("Hasil menunjukkan bahwa P-value > 0.05 sehingga Tak Tolak H0 atau dapat dikatakan bahwa belum cukup bukti untuk mengatakan sisaan tidak heterogen")
+      return("Sisaan tidak heterogen")
     }  
     else{
-      return("Hasil menunjukkan bahwa P-value < 0.05 sehingga Tolak H0 atau dapat dikatakan bahwa cukup bukti untuk mengatakan sisaan heterogen")
+      return("Sisaan heterogen")
     }
   })
   
@@ -342,10 +347,10 @@ server <- function(input, output, session){
   
   asumsi.auto <- reactive({
     req(lm_reg())
-    if(input$sel.auto == "dw"){
+    if(input$sel.auto == "Durbin-Watson"){
       return(lmtest::dwtest(lm_reg()))  
     }
-    else if(input$sel.auto == "bg"){
+    else if(input$sel.auto == "Breusch-Godfrey"){
       return(lmtest::bgtest(lm_reg()))
     }
     
@@ -354,10 +359,10 @@ server <- function(input, output, session){
   auto.result <- reactive({
     req(asumsi.auto())
     if(asumsi.auto()$p.value > 0.05){
-      return("Hasil menunjukkan bahwa P-value > 0.05 sehingga Tak Tolak H0 atau dapat dikatakan bahwa belum cukup bukti untuk mengatakan terdapat Autokorelasi")
+      return("Tidak ada autokorelasi")
     }
     else{
-      return("Hasil menunjukkan bahwa P-value < 0.05 sehingga Tolak H0 atau dapat dikatakan bahwa cukup bukti untuk mengatakan terdapat Autokorelasi")
+      return("Ada Autokorelasi")
     }
   })
   
@@ -371,6 +376,24 @@ server <- function(input, output, session){
     req(auto.result())
     print(auto.result())
   })
+  
+  p.norm <- reactive(asumsi.norm()$p.value)
+  
+  p.hetero <- reactive(asumsi.hetero()$p.value)
+  
+  p.auto <- reactive(asumsi.auto()$p.value)
+  
+  output$ringkas_uji <- renderTable({
+    req(norm.result())
+    req(hetero.result())
+    req(auto.result())
+    data.frame(
+      "Jenis Asumsi" = c("Normalitas", "Heterokedastisitas", "Autokorelasi"),
+      "Jenis Uji" = c(input$sel.norm, input$sel.hetero, input$sel.auto),
+      "P-value" = c(p.norm(), p.hetero(), p.auto()),
+      "Keputusan" = c(paste(norm.result()), paste(hetero.result()), paste(auto.result()))
+    )}
+  )
   
   output$diag <- renderPlot({
     req(lm_reg())
@@ -389,6 +412,8 @@ server <- function(input, output, session){
   })
   
   output$multikol <- renderPrint(mulcol())
+  
+  output$note_vif <- renderText(paste("Note: VIF > 10 mengindikasikan multikolinearitas"))
   
 }
 
